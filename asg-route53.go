@@ -116,7 +116,7 @@ func getHostedZones(name string) *string {
 }
 
 // update record with given IPs
-func changeRecord(zone *string, name *string, rectype *string, ips []*string) {
+func changeRecord(zone *string, name *string, rectype *string, ttl int64, ips []*string) {
 	svc := route53.New(session.New())
 
 	// transform IPs into resource records
@@ -137,7 +137,7 @@ func changeRecord(zone *string, name *string, rectype *string, ips []*string) {
 					ResourceRecordSet: &route53.ResourceRecordSet{
 						Name:            aws.String(*name),
 						Type:            aws.String(*rectype),
-						TTL:             aws.Int64(180),
+						TTL:             aws.Int64(ttl),
 						ResourceRecords: rrecords,
 					},
 				},
@@ -164,6 +164,7 @@ func main() {
 	priority := flag.Int("priority", 0, "priority for SRV records")
 	weight := flag.Int("weight", 0, "weight for SRV records")
 	port := flag.Int("port", 2380, "port for SRV records")
+	ttl  := flag.Int64("ttl", 180, "ttl for the records")
 	zone_id := flag.String("zoneid", "", "Route53 Zone ID")
 	flag.Parse()
 
@@ -192,9 +193,8 @@ func main() {
 	}
 
 	// update DNS
-
 	if *zone_id == "" {
 		zone_id = getHostedZones(parseZone(record))
 	}
-	changeRecord(zone_id, &record, rectype, ips)
+	changeRecord(zone_id, &record, rectype, *ttl, ips)
 }
